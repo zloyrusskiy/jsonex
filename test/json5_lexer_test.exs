@@ -6,11 +6,16 @@ defmodule JSON5LexerTest do
   end
 
   test "boolean" do
-    assert :json5_lexer.string('true') == {:ok, [{true, 1}], 1}
-    assert :json5_lexer.string('false') == {:ok, [{false, 1}], 1}
+    assert :json5_lexer.string('true') == {:ok, [{:boolean, 1, 'true'}], 1}
+    assert :json5_lexer.string('false') == {:ok, [{:boolean, 1, 'false'}], 1}
   end
 
   describe "string" do
+    test "empty string" do
+      assert :json5_lexer.string('""') == {:ok, [{:dq_string, 1, '""'}], 1}
+      assert :json5_lexer.string('\'\'') == {:ok, [{:sq_string, 1, '\'\''}], 1}
+    end
+
     test "sq string" do
       assert :json5_lexer.string('\'test\'') == {:ok, [{:sq_string, 1, '\'test\''}], 1}
     end
@@ -80,10 +85,28 @@ defmodule JSON5LexerTest do
     end
   end
 
-  test "object" do
-    assert :json5_lexer.string('{"a": 1}') ==
-             {:ok, [{:"{", 1}, {:dq_string, 1, '"a"'}, {:":", 1}, {:number, 1, '1'}, {:"}", 1}],
-              1}
+  describe "object" do
+    test "identifier" do
+      assert :json5_lexer.string('{a:1,$:3}') ==
+               {:ok,
+                [
+                  {:"{", 1},
+                  {:identifier, 1, 'a'},
+                  {:":", 1},
+                  {:number, 1, '1'},
+                  {:",", 1},
+                  {:identifier, 1, '$'},
+                  {:":", 1},
+                  {:number, 1, '3'},
+                  {:"}", 1}
+                ], 1}
+    end
+
+    test "complex" do
+      assert :json5_lexer.string('{"a": 1}') ==
+               {:ok, [{:"{", 1}, {:dq_string, 1, '"a"'}, {:":", 1}, {:number, 1, '1'}, {:"}", 1}],
+                1}
+    end
   end
 
   test "array" do
@@ -97,8 +120,18 @@ defmodule JSON5LexerTest do
                 {:",", 1},
                 {:null, 1},
                 {:",", 1},
-                {false, 1},
+                {:boolean, 1, 'false'},
                 {:"]", 1}
               ], 1}
+  end
+
+  test "single line comment" do
+    assert :json5_lexer.string("// some text\nnull" |> to_charlist) ==
+             {:ok, [{:comment, 1, '// some text'}, {:null, 2}], 2}
+  end
+
+  test "multi line comment" do
+    assert :json5_lexer.string("/* some text\nnull*/null" |> to_charlist) ==
+             {:ok, [{:comment, 1, '/* some text\nnull*/'}, {:null, 2}], 2}
   end
 end

@@ -15,22 +15,30 @@ NUMBER_INFINITY = Infinity
 NUMBER_NAN = NaN
 NUMBER = ({INT}{EXP}|{FLOATING}{EXP}|{FLOATING}|{NUMBER_INFINITY}|{NUMBER_NAN}|{HEX_NUMBER}|{OCT_NUMBER}|{TRAILING_FRAC}|{INT}|{FRAC})
 NUMBER_WITH_SIGN = [\-\+]?{NUMBER}
+UNICODE_ESCAPE_SEQUENCE = \\u{HEX_DIGIT}{HEX_DIGIT}{HEX_DIGIT}{HEX_DIGIT}
+IDENTIFIER = ([\$\_a-zA-Z]|{UNICODE_ESCAPE_SEQUENCE})+
 ESCAPEDCHAR = \\.
 SINGLE_QUOTE = '
 SINGLE_QUOTED_CHAR = ({ESCAPEDCHAR}|[^{SINGLE_QUOTE}])
 DOUBLE_QUOTE = "
 DOUBLE_QUOTED_CHAR = ({ESCAPEDCHAR}|[^{DOUBLE_QUOTE}])
-EMPTY_STRING = ({SINGLE_QUOTE}{SINGLE_QUOTE}|{DOUBLE_QUOTE}{DOUBLE_QUOTE})
 WHITESPACE = [\s\t\n\r]
+SINGLE_LINE_COMMENT = //[^\n]+
+MULTI_LINE_COMMENT = /\*(.|\n)+\*/
+SINGLE_QUOTE_STRING = ({SINGLE_QUOTE}{SINGLE_QUOTE}|{SINGLE_QUOTE}{SINGLE_QUOTED_CHAR}+{SINGLE_QUOTE})
+DOUBLE_QUOTE_STRING = ({DOUBLE_QUOTE}{DOUBLE_QUOTE}|{DOUBLE_QUOTE}{DOUBLE_QUOTED_CHAR}+{DOUBLE_QUOTE})
+BOOLEAN = (true|false)
 
 Rules.
 
-{SINGLE_QUOTE}{SINGLE_QUOTED_CHAR}+{SINGLE_QUOTE} : {token, {sq_string, TokenLine, TokenChars}}.
-{DOUBLE_QUOTE}{DOUBLE_QUOTED_CHAR}+{DOUBLE_QUOTE} : {token, {dq_string, TokenLine, TokenChars}}.
+{SINGLE_QUOTE_STRING} : {token, {sq_string, TokenLine, TokenChars}}.
+{DOUBLE_QUOTE_STRING} : {token, {dq_string, TokenLine, TokenChars}}.
 {NUMBER_WITH_SIGN} : {token, {number, TokenLine, TokenChars}}.
+{SINGLE_LINE_COMMENT} : {token, {comment, TokenLine, TokenChars}}.
+{MULTI_LINE_COMMENT} : {token, {comment, TokenLine, TokenChars}}.
 null : {token, {null, TokenLine}}.
-true : {token, {true, TokenLine}}.
-false : {token, {false, TokenLine}}.
+{BOOLEAN} : {token, {boolean, TokenLine, TokenChars}}.
+{IDENTIFIER} : {token, {identifier, TokenLine, TokenChars}}.
 \[ : {token, {'[', TokenLine}}.
 \] : {token, {']', TokenLine}}.
 \{ : {token, {'{', TokenLine}}.
